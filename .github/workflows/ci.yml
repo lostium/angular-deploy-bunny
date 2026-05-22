@@ -24,3 +24,39 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm run typecheck
       - run: pnpm test
+
+  # Verifies the @angular-devkit/architect peer surface compiles and the suite
+  # passes against every supported Angular major (the peerDependencies range).
+  angular-compat:
+    name: Angular ${{ matrix.angular }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - angular: "17"
+            architect: ">=0.1700.0 <0.1800.0"
+            core: ">=17.0.0 <18.0.0"
+          - angular: "18"
+            architect: ">=0.1800.0 <0.1900.0"
+            core: ">=18.0.0 <19.0.0"
+          - angular: "19"
+            architect: ">=0.1900.0 <0.2000.0"
+            core: ">=19.0.0 <20.0.0"
+          - angular: "20"
+            architect: ">=0.2000.0 <0.2100.0"
+            core: ">=20.0.0 <21.0.0"
+          - angular: "21"
+            architect: ">=0.2100.0 <0.2200.0"
+            core: ">=21.0.0 <22.0.0"
+    steps:
+      - uses: actions/checkout@v4
+      - run: corepack enable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --no-frozen-lockfile --ignore-scripts
+      - run: pnpm add -D --ignore-scripts "@angular-devkit/architect@${{ matrix.architect }}" "@angular-devkit/core@${{ matrix.core }}"
+      - run: pnpm run typecheck
+      - run: pnpm test
