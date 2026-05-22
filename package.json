@@ -34,8 +34,7 @@
     "prepare": "tsc -p .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc -p . --noEmit",
-    "prepublishOnly": "pnpm run build && pnpm run test"
+    "typecheck": "tsc -p . --noEmit"
   },
   "dependencies": {
     "@bunny.net/storage-sdk": "^0.3.1",

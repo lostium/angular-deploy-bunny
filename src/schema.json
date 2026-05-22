@@ -20,7 +20,8 @@
     "storageRegion": {
       "type": "string",
       "enum": ["Falkenstein", "London", "NewYork", "LosAngeles", "Singapore", "Stockholm", "SaoPaulo", "Johannesburg", "Sydney"],
-      "default": "Falkenstein"
+      "default": "Falkenstein",
+      "description": "Primary region of the Storage Zone (must match where the zone was created)."
     },
     "targetFolder": {
       "type": "string",
@@ -29,25 +30,30 @@
     },
     "pullZoneId": {
       "type": ["number", "null"],
-      "default": null
+      "default": null,
+      "description": "Numeric Pull Zone ID to purge after upload. Required when purgeAfterUpload is true."
     },
     "purgeAfterUpload": {
       "type": "boolean",
-      "default": true
+      "default": true,
+      "description": "Purge the Pull Zone cache after a successful sync."
     },
     "concurrency": {
       "type": "number",
       "default": 8,
-      "minimum": 1
+      "minimum": 1,
+      "description": "Maximum number of parallel uploads and deletes."
     },
     "ignore": {
       "type": "array",
       "items": { "type": "string" },
-      "default": []
+      "default": [],
+      "description": "Glob patterns (relative to the output folder) to exclude from the sync. Supports **, *, and literals."
     },
     "dryRun": {
       "type": "boolean",
-      "default": false
+      "default": false,
+      "description": "Compute and print the diff without uploading, deleting, or purging."
     }
   },
   "required": ["storageZoneName"]
