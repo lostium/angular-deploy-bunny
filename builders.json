@@ -1,0 +1,10 @@
+{
+  "$schema": "../../node_modules/@angular-devkit/architect/src/builders-schema.json",
+  "builders": {
+    "deploy": {
+      "implementation": "./dist/deploy.js",
+      "schema": "./src/schema.json",
+      "description": "Deploy the build output to Bunny CDN Storage."
+    }
+  }
+}

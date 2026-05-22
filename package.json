@@ -1,0 +1,69 @@
+{
+  "name": "angular-deploy-bunny",
+  "version": "0.1.0",
+  "description": "Angular Architect builder (ng deploy) that syncs your build output to a Bunny.net CDN Storage Zone with SHA256-based incremental diffing, then purges the Pull Zone.",
+  "keywords": [
+    "angular",
+    "ng-deploy",
+    "architect-builder",
+    "bunny",
+    "bunny.net",
+    "bunnycdn",
+    "cdn",
+    "deploy",
+    "storage-zone",
+    "static-site"
+  ],
+  "type": "module",
+  "main": "./dist/deploy.js",
+  "builders": "./builders.json",
+  "files": [
+    "dist",
+    "builders.json",
+    "src/schema.json",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "engines": {
+    "node": ">=18.13.0"
+  },
+  "packageManager": "pnpm@11.0.8",
+  "scripts": {
+    "build": "tsc -p .",
+    "prepare": "tsc -p .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc -p . --noEmit",
+    "prepublishOnly": "pnpm run build && pnpm run test"
+  },
+  "dependencies": {
+    "@bunny.net/storage-sdk": "^0.3.1",
+    "dotenv": "^16.4.7"
+  },
+  "peerDependencies": {
+    "@angular-devkit/architect": ">=0.1700.0",
+    "@angular-devkit/core": ">=17.0.0"
+  },
+  "devDependencies": {
+    "@angular-devkit/architect": "^0.2102.9",
+    "@angular-devkit/core": "^21.2.9",
+    "@types/node": "^25.6.0",
+    "typescript": "~5.9.2",
+    "vitest": "^4.0.8"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lostium/angular-deploy-bunny.git"
+  },
+  "homepage": "https://github.com/lostium/angular-deploy-bunny#readme",
+  "bugs": {
+    "url": "https://github.com/lostium/angular-deploy-bunny/issues"
+  },
+  "author": "Lostium",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

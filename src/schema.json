@@ -1,0 +1,54 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Bunny Deploy Builder",
+  "type": "object",
+  "properties": {
+    "buildTarget": {
+      "type": ["string", "null"],
+      "default": null,
+      "description": "Angular build target to run before deploying (e.g. \"my-app:build:production\"). If null, outputPath must be set."
+    },
+    "outputPath": {
+      "type": ["string", "null"],
+      "default": null,
+      "description": "Folder to sync. Defaults to the build target's output + /browser."
+    },
+    "storageZoneName": {
+      "type": "string",
+      "description": "Bunny Storage Zone name."
+    },
+    "storageRegion": {
+      "type": "string",
+      "enum": ["Falkenstein", "London", "NewYork", "LosAngeles", "Singapore", "Stockholm", "SaoPaulo", "Johannesburg", "Sydney"],
+      "default": "Falkenstein"
+    },
+    "targetFolder": {
+      "type": "string",
+      "default": "/",
+      "description": "Subpath inside the storage zone."
+    },
+    "pullZoneId": {
+      "type": ["number", "null"],
+      "default": null
+    },
+    "purgeAfterUpload": {
+      "type": "boolean",
+      "default": true
+    },
+    "concurrency": {
+      "type": "number",
+      "default": 8,
+      "minimum": 1
+    },
+    "ignore": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": []
+    },
+    "dryRun": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": ["storageZoneName"]
+}
