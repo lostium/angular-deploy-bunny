@@ -119,6 +119,11 @@ client, and the deploy orchestrator. The orchestrator uses a small dependency
 injection seam so tests bypass the SDK and the real filesystem; there are no
 E2E tests against live Bunny — verify those with `ng deploy --dry-run`.
 
+## Contributing
+
+Contributions are welcome — see [CONTRIBUTING.md](./CONTRIBUTING.md) for the
+development setup, project layout, and release process.
+
 ## License
 
 [MIT](./LICENSE) © Lostium
