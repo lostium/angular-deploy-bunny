@@ -11,7 +11,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: [20, 22, 24]
+        # Min is 22.13 because the pinned pnpm (packageManager) requires it.
+        # The published builder itself runs on Node >=18.13 (see package.json engines).
+        node: [22, 24]
     steps:
       - uses: actions/checkout@v4
       - run: corepack enable
