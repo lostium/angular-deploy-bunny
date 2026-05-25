@@ -15,9 +15,9 @@ jobs:
         # also satisfies the pinned pnpm's own >=22.13 requirement.
         node: [22, 24]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - run: corepack enable
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node }}
           cache: pnpm
@@ -56,9 +56,9 @@ jobs:
             architect: ">=0.2100.0 <0.2200.0"
             core: ">=21.0.0 <22.0.0"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - run: corepack enable
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: pnpm
