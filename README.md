@@ -28,7 +28,7 @@ pnpm add -D angular-deploy-bunny
 
 Requires **Angular 17+** using the esbuild-based **application builder** — the
 default since v17, which emits the browser bundle into a `browser/` folder — and
-**Node 18.13+**. The test suite runs in CI against Angular 17 through 21.
+**Node 22+**. The test suite runs in CI against Angular 17 through 21.
 
 ## Quick start
 
