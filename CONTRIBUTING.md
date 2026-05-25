@@ -6,7 +6,7 @@ focused package, so the workflow is lightweight.
 ## Prerequisites
 
 - **Node.js ≥ 22.13** — required by the pinned pnpm version. (The *published*
-  builder runs on Node ≥ 18.13; the higher floor only applies to development.)
+  builder requires Node ≥ 22; development just needs the slightly higher pnpm floor.)
 - **pnpm** — managed via Corepack, which ships with Node:
 
   ```sh

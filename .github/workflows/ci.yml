@@ -11,8 +11,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Min is 22.13 because the pinned pnpm (packageManager) requires it.
-        # The published builder itself runs on Node >=18.13 (see package.json engines).
+        # The published builder requires Node >=22 (package.json engines), which
+        # also satisfies the pinned pnpm's own >=22.13 requirement.
         node: [22, 24]
     steps:
       - uses: actions/checkout@v4
