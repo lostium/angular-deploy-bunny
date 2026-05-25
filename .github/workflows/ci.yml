@@ -24,6 +24,12 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm run typecheck
       - run: pnpm test
+      - run: pnpm run build
+      # The suite imports src/*.ts; this proves the published dist/ entry point
+      # actually loads and exposes the builder (catches a broken/missing emit).
+      - name: Smoke-test the published entry point
+        run: |
+          node -e "import('./dist/deploy.js').then((m) => { if (typeof m.default === 'undefined' || typeof m.runDeploy !== 'function') { console.error('dist/deploy.js is missing expected exports'); process.exit(1); } }).catch((e) => { console.error(e); process.exit(1); })"
 
   # Verifies the @angular-devkit/architect peer surface compiles and the suite
   # passes against every supported Angular major (the peerDependencies range).
@@ -60,3 +66,9 @@ jobs:
       - run: pnpm add -D --ignore-scripts "@angular-devkit/architect@${{ matrix.architect }}" "@angular-devkit/core@${{ matrix.core }}"
       - run: pnpm run typecheck
       - run: pnpm test
+      - run: pnpm run build
+      # Confirms dist/deploy.js loads at runtime against this Angular major —
+      # guards the CJS/ESM interop of the @angular-devkit peer import.
+      - name: Smoke-test the published entry point
+        run: |
+          node -e "import('./dist/deploy.js').then((m) => { if (typeof m.default === 'undefined' || typeof m.runDeploy !== 'function') { console.error('dist/deploy.js is missing expected exports'); process.exit(1); } }).catch((e) => { console.error(e); process.exit(1); })"

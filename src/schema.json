@@ -31,6 +31,7 @@
     "pullZoneId": {
       "type": ["number", "null"],
       "default": null,
+      "minimum": 1,
       "description": "Numeric Pull Zone ID to purge after upload. Required when purgeAfterUpload is true."
     },
     "purgeAfterUpload": {
