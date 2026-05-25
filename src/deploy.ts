@@ -45,11 +45,16 @@ function formatBytes(n: number): string {
   return `${(n / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+function toAbsolute(p: string, workspaceRoot: string): string {
+  const isAbs = p.startsWith('/') || /^[A-Za-z]:[\\/]/.test(p);
+  return isAbs ? p : join(workspaceRoot, p);
+}
+
 async function resolveOutputPath(
   options: DeployOptions,
   context: BuilderContext,
 ): Promise<string> {
-  if (options.outputPath) return options.outputPath;
+  if (options.outputPath) return toAbsolute(options.outputPath, context.workspaceRoot);
   if (!options.buildTarget) {
     throw new Error('Either buildTarget or outputPath must be set.');
   }
@@ -82,9 +87,7 @@ async function resolveOutputPath(
   } else {
     baseDir = join('dist', projectName);
   }
-  const isAbs = baseDir.startsWith('/') || /^[A-Za-z]:[\\/]/.test(baseDir);
-  const abs = isAbs ? baseDir : join(context.workspaceRoot, baseDir);
-  return join(abs, browserDir);
+  return join(toAbsolute(baseDir, context.workspaceRoot), browserDir);
 }
 
 export async function runDeploy(
@@ -130,6 +133,16 @@ export async function runDeploy(
     log.info(
       `Diff: ${plan.toUpload.length} upload (${formatBytes(uploadBytes)}), ${plan.toDelete.length} delete, ${plan.unchanged.length} unchanged.`,
     );
+
+    // Safety floor: an empty local folder against a non-empty remote would mirror
+    // into deleting the entire site. That almost always means the build produced
+    // no output or outputPath is wrong — refuse before any destructive call.
+    if (local.length === 0 && remote.length > 0) {
+      return {
+        success: false,
+        error: `Refusing to delete all ${remote.length} remote file(s): the local output folder "${outputPath}" is empty. Check that the build produced output and that buildTarget/outputPath is correct.`,
+      };
+    }
 
     if (options.dryRun) {
       for (const f of plan.toUpload) log.debug(`  + ${f.relPath} (${formatBytes(f.size)})`);
