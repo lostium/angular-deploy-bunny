@@ -45,6 +45,12 @@
       "minimum": 1,
       "description": "Maximum number of parallel uploads and deletes."
     },
+    "retries": {
+      "type": "number",
+      "default": 3,
+      "minimum": 0,
+      "description": "Times to retry a failed upload, delete, list, or purge, with exponential backoff. 0 disables retries."
+    },
     "ignore": {
       "type": "array",
       "items": { "type": "string" },

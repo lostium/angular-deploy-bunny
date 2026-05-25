@@ -1,3 +1,6 @@
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const sdkMock = {
@@ -101,6 +104,37 @@ describe('BunnyClient', () => {
     expect(url).toBe('https://api.bunny.net/pullzone/12345/purgeCache');
     expect((init as RequestInit).method).toBe('POST');
     expect((init as RequestInit).headers).toMatchObject({ AccessKey: 'ak' });
+  });
+
+  it('retries a failed upload and succeeds on a later attempt', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'bunny-up-'));
+    const file = join(dir, 'app.js');
+    writeFileSync(file, 'console.log(1)');
+    try {
+      let calls = 0;
+      sdkMock.file.upload.mockImplementation(async () => {
+        calls += 1;
+        if (calls < 2) throw new Error('503 transient');
+        return undefined;
+      });
+      const warnings: string[] = [];
+      const client = new BunnyClient({
+        region: 'Falkenstein',
+        zoneName: 'my-zone',
+        storagePassword: 'sp',
+        accountApiKey: 'ak',
+        retries: 2,
+        retryBaseDelayMs: 0,
+        logger: { debug: () => {}, info: () => {}, warn: (m: string) => warnings.push(m) },
+      });
+
+      await client.upload('app.js', file, 'deadbeef', '/');
+
+      expect(sdkMock.file.upload).toHaveBeenCalledTimes(2);
+      expect(warnings.some((w) => /retry/i.test(w))).toBe(true);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   it('purgePullZone throws on a non-2xx response', async () => {

@@ -40,6 +40,7 @@ function baseOptions(overrides: Partial<DeployOptions> = {}): DeployOptions {
     pullZoneId: 12345,
     purgeAfterUpload: true,
     concurrency: 4,
+    retries: 3,
     ignore: [],
     dryRun: false,
     ...overrides,

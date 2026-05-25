@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   before syncing and auto-resolves the `/browser` output folder).
 - Configurable `storageRegion`, `targetFolder`, `ignore` globs, and
   `concurrency`.
+- Automatic `retries` (default 3) with exponential backoff on failed uploads,
+  deletes, listings, and Pull Zone purges.
 - `dryRun` mode and a `purgeAfterUpload` toggle.
 - Credentials read from environment variables or a `.env.local` file.
 
