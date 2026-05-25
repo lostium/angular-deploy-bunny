@@ -1,6 +1,6 @@
 {
   "name": "angular-deploy-bunny",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Angular Architect builder (ng deploy) that syncs your build output to a Bunny.net CDN Storage Zone with SHA256-based incremental diffing, then purges the Pull Zone.",
   "keywords": [
     "angular",
@@ -21,6 +21,7 @@
     "dist",
     "builders.json",
     "src/schema.json",
+    ".env.local.example",
     "README.md",
     "LICENSE",
     "CHANGELOG.md"

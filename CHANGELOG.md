@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] — 2026-05-25
+
+### Fixed
+
+- Ship `.env.local.example` in the published package. The README's
+  `cp node_modules/angular-deploy-bunny/.env.local.example .env.local`
+  instruction referenced a file that wasn't included in the tarball.
+
 ## [0.1.0] — 2026-05-22
 
 ### Added
@@ -23,5 +31,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `dryRun` mode and a `purgeAfterUpload` toggle.
 - Credentials read from environment variables or a `.env.local` file.
 
-[Unreleased]: https://github.com/lostium/angular-deploy-bunny/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/lostium/angular-deploy-bunny/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/lostium/angular-deploy-bunny/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/lostium/angular-deploy-bunny/releases/tag/v0.1.0
