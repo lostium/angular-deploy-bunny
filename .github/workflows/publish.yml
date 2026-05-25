@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write # required for npm provenance
+      id-token: write # required for OIDC trusted publishing + provenance
     steps:
       - uses: actions/checkout@v4
       - run: corepack enable
@@ -21,6 +21,9 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm run build
       - run: pnpm test
+      # Trusted Publishing (OIDC) — no NPM_TOKEN. npm >= 11.5.1 exchanges the
+      # GitHub Actions id-token for a short-lived credential and attaches
+      # provenance automatically. Requires a Trusted Publisher configured for
+      # this package on npmjs.com (repo + workflow file).
+      - run: npm install -g npm@latest
       - run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
