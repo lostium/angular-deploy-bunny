@@ -13,15 +13,18 @@ export interface LoadSecretsOptions {
   workspaceRoot?: string;
 }
 
-let dotenvLoaded = false;
+// Keyed by the resolved .env.local path so each distinct workspace root loads
+// its own file once. A single boolean would latch on the first root and skip
+// every later one (breaks multi-project workspaces deploying in one process).
+const loadedDotenvPaths = new Set<string>();
 
 function ensureDotenv(workspaceRoot: string): void {
-  if (dotenvLoaded) return;
   const path = resolve(workspaceRoot, '.env.local');
+  if (loadedDotenvPaths.has(path)) return;
   if (existsSync(path)) {
     loadDotenv({ path });
   }
-  dotenvLoaded = true;
+  loadedDotenvPaths.add(path);
 }
 
 export function loadSecrets(options: LoadSecretsOptions): Secrets {
@@ -46,5 +49,5 @@ export function loadSecrets(options: LoadSecretsOptions): Secrets {
 
 // Test-only escape hatch.
 export function _resetDotenvLoaded(): void {
-  dotenvLoaded = false;
+  loadedDotenvPaths.clear();
 }
