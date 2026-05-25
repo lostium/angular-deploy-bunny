@@ -9,12 +9,25 @@ function toPosix(p: string): string {
 }
 
 function matchesGlob(relPath: string, glob: string): boolean {
-  const escaped = glob
-    .replace(/[.+^${}()|[\]\\]/g, '\\$&')
-    .replace(/^\*\*\//, '(?:.*/)?')      // leading **/ → optional directory prefix
-    .replace(/\*\*/g, '.*')               // remaining ** → any chars including /
-    .replace(/\*/g, '[^/]*');             // single * → any non-slash chars
-  return new RegExp('^' + escaped + '$').test(relPath);
+  // Translate the glob to a regex in a SINGLE pass. Doing it in successive
+  // .replace() calls is unsafe: expanding ** into `.*` (or `**/` into
+  // `(?:.*/)?`) injects `*` characters that a later single-* pass would
+  // reprocess, corrupting `.*` into `.[^/]*` and breaking deep matching.
+  // Alternation order matters — `**/` and `**` are matched before a lone `*`.
+  // Everything else (including `?`) is a literal and gets escaped.
+  const pattern = glob.replace(/\*\*\/|\*\*|\*|[.+^${}()|[\]?\\]/g, (token) => {
+    switch (token) {
+      case '**/':
+        return '(?:.*/)?'; // any number of leading directories, including none
+      case '**':
+        return '.*'; // any characters, including /
+      case '*':
+        return '[^/]*'; // any run of non-slash characters
+      default:
+        return `\\${token}`; // escape a regex metacharacter → literal match
+    }
+  });
+  return new RegExp(`^${pattern}$`).test(relPath);
 }
 
 function isIgnored(relPath: string, ignore: string[]): boolean {

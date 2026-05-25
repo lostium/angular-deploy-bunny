@@ -184,4 +184,37 @@ describe('runDeploy', () => {
     expect(getTargetOptions).toHaveBeenCalled();
     expect(client.upload).toHaveBeenCalledTimes(2);
   });
+
+  it('refuses to delete the whole remote when the local folder is empty', async () => {
+    const emptyDir = mkdtempSync(join(tmpdir(), 'bunny-empty-'));
+    try {
+      client.listAll.mockResolvedValue([
+        { relPath: 'index.html', size: 15, sha256: 'abc' },
+        { relPath: 'app.js', size: 3, sha256: 'def' },
+      ]);
+      const out = await runDeploy(baseOptions({ outputPath: emptyDir }), fakeContext(), deps);
+      expect(out.success).toBe(false);
+      expect(out.error).toMatch(/empty/i);
+      expect(client.remove).not.toHaveBeenCalled();
+      expect(client.upload).not.toHaveBeenCalled();
+      expect(client.purgePullZone).not.toHaveBeenCalled();
+    } finally {
+      rmSync(emptyDir, { recursive: true, force: true });
+    }
+  });
+
+  it('resolves a relative outputPath against the workspace root, not cwd', async () => {
+    const wsRoot = mkdtempSync(join(tmpdir(), 'bunny-ws-'));
+    const browserDirName = 'relative-out';
+    mkdirSync(join(wsRoot, browserDirName));
+    writeFileSync(join(wsRoot, browserDirName, 'index.html'), '<!doctype html>');
+    try {
+      const ctx = fakeContext({ workspaceRoot: wsRoot });
+      const out = await runDeploy(baseOptions({ outputPath: browserDirName }), ctx, deps);
+      expect(out.success).toBe(true);
+      expect(client.upload).toHaveBeenCalledTimes(1);
+    } finally {
+      rmSync(wsRoot, { recursive: true, force: true });
+    }
+  });
 });
