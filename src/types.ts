@@ -22,6 +22,7 @@ export interface DeployOptions extends JsonObject {
   pullZoneId: number | null;
   purgeAfterUpload: boolean;
   concurrency: number;
+  retries: number;
   ignore: string[];
   dryRun: boolean;
 }

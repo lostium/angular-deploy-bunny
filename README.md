@@ -89,6 +89,7 @@ missing the build aborts before touching the network with a clear message.
 | `pullZoneId`       | `number \| null` | `null`         | Required when `purgeAfterUpload` is true.                                                      |
 | `purgeAfterUpload` | `boolean`        | `true`         | Purge the Pull Zone cache after a successful sync.                                             |
 | `concurrency`      | `number`         | `8`            | Parallel uploads/deletes.                                                                      |
+| `retries`          | `number`         | `3`            | Retries per failed upload/delete/list/purge (exponential backoff). `0` disables.              |
 | `ignore`           | `string[]`       | `[]`           | Glob patterns to skip. Supports `**`, `*`, and literals.                                       |
 | `dryRun`           | `boolean`        | `false`        | Compute and print the diff without writing anything.                                          |
 

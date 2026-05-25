@@ -30,6 +30,7 @@ export interface Deps {
     zoneName: string;
     storagePassword: string;
     accountApiKey: string | null;
+    retries: number;
     logger: BunnyLogger;
   }) => ClientLike;
 }
@@ -117,6 +118,7 @@ export async function runDeploy(
       zoneName: options.storageZoneName,
       storagePassword: secrets.storagePassword,
       accountApiKey: secrets.accountApiKey,
+      retries: options.retries,
       logger: log,
     });
 
