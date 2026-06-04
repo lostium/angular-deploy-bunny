@@ -51,6 +51,33 @@ describe('loadSecrets', () => {
     );
   });
 
+  it('falls back to .env when .env.local does not exist', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'bunny-env-fallback-'));
+    writeFileSync(join(dir, '.env'), 'BUNNY_STORAGE_PASSWORD=fromEnv\n');
+    try {
+      expect(loadSecrets({ requireAccountApiKey: false, workspaceRoot: dir })).toEqual({
+        storagePassword: 'fromEnv',
+        accountApiKey: null,
+      });
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('.env.local takes precedence over .env when both exist', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'bunny-env-precedence-'));
+    writeFileSync(join(dir, '.env'), 'BUNNY_STORAGE_PASSWORD=fromEnv\n');
+    writeFileSync(join(dir, '.env.local'), 'BUNNY_STORAGE_PASSWORD=fromLocal\n');
+    try {
+      expect(loadSecrets({ requireAccountApiKey: false, workspaceRoot: dir })).toEqual({
+        storagePassword: 'fromLocal',
+        accountApiKey: null,
+      });
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it('loads .env.local for each distinct workspaceRoot, not only the first', () => {
     const dirA = mkdtempSync(join(tmpdir(), 'bunny-env-a-')); // no .env.local
     const dirB = mkdtempSync(join(tmpdir(), 'bunny-env-b-'));
