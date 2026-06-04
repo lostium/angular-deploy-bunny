@@ -13,18 +13,23 @@ export interface LoadSecretsOptions {
   workspaceRoot?: string;
 }
 
-// Keyed by the resolved .env.local path so each distinct workspace root loads
-// its own file once. A single boolean would latch on the first root and skip
-// every later one (breaks multi-project workspaces deploying in one process).
-const loadedDotenvPaths = new Set<string>();
+// Keyed by the resolved workspace root so each distinct root loads its own
+// file once. A single boolean would latch on the first root and skip every
+// later one (breaks multi-project workspaces deploying in one process).
+const loadedWorkspaceRoots = new Set<string>();
 
 function ensureDotenv(workspaceRoot: string): void {
-  const path = resolve(workspaceRoot, '.env.local');
-  if (loadedDotenvPaths.has(path)) return;
-  if (existsSync(path)) {
-    loadDotenv({ path });
+  if (loadedWorkspaceRoots.has(workspaceRoot)) return;
+  const envLocal = resolve(workspaceRoot, '.env.local');
+  if (existsSync(envLocal)) {
+    loadDotenv({ path: envLocal });
+  } else {
+    const envFile = resolve(workspaceRoot, '.env');
+    if (existsSync(envFile)) {
+      loadDotenv({ path: envFile });
+    }
   }
-  loadedDotenvPaths.add(path);
+  loadedWorkspaceRoots.add(workspaceRoot);
 }
 
 export function loadSecrets(options: LoadSecretsOptions): Secrets {
@@ -33,14 +38,14 @@ export function loadSecrets(options: LoadSecretsOptions): Secrets {
   const storagePassword = process.env['BUNNY_STORAGE_PASSWORD'];
   if (!storagePassword) {
     throw new Error(
-      'Missing BUNNY_STORAGE_PASSWORD. Set it in your shell or in .env.local at the repo root.',
+      'Missing BUNNY_STORAGE_PASSWORD. Set it in your shell, in .env.local, or in .env at the repo root.',
     );
   }
 
   const accountApiKey = process.env['BUNNY_ACCOUNT_API_KEY'] ?? null;
   if (options.requireAccountApiKey && !accountApiKey) {
     throw new Error(
-      'Missing BUNNY_ACCOUNT_API_KEY (required when purgeAfterUpload is true). Set it in your shell or in .env.local at the repo root.',
+      'Missing BUNNY_ACCOUNT_API_KEY (required when purgeAfterUpload is true). Set it in your shell, in .env.local, or in .env at the repo root.',
     );
   }
 
@@ -49,5 +54,5 @@ export function loadSecrets(options: LoadSecretsOptions): Secrets {
 
 // Test-only escape hatch.
 export function _resetDotenvLoaded(): void {
-  loadedDotenvPaths.clear();
+  loadedWorkspaceRoots.clear();
 }
