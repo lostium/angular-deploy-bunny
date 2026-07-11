@@ -55,6 +55,9 @@ jobs:
           - angular: "21"
             architect: ">=0.2100.0 <0.2200.0"
             core: ">=21.0.0 <22.0.0"
+          - angular: "22"
+            architect: ">=0.2200.0 <0.2300.0"
+            core: ">=22.0.0 <23.0.0"
     steps:
       - uses: actions/checkout@v6
       - run: corepack enable
