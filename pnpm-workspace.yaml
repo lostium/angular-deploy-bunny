@@ -1,0 +1,4 @@
+# Force vite to a version that patches GHSA-fx2h-pf6j-xcff and GHSA-v6wh-96g9-6wx3
+# (vite reaches this repo only transitively, via vitest's dev server).
+overrides:
+  vite: ^8.0.16

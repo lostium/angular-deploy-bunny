@@ -22,11 +22,11 @@ function ensureDotenv(workspaceRoot: string): void {
   if (loadedWorkspaceRoots.has(workspaceRoot)) return;
   const envLocal = resolve(workspaceRoot, '.env.local');
   if (existsSync(envLocal)) {
-    loadDotenv({ path: envLocal });
+    loadDotenv({ path: envLocal, quiet: true });
   } else {
     const envFile = resolve(workspaceRoot, '.env');
     if (existsSync(envFile)) {
-      loadDotenv({ path: envFile });
+      loadDotenv({ path: envFile, quiet: true });
     }
   }
   loadedWorkspaceRoots.add(workspaceRoot);
