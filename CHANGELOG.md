@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.3] — 2026-07-11
+
+### Changed
+
+- Bump the `dotenv` runtime dependency from 16 to 17 and load it with
+  `quiet: true`, so it no longer prints `injected env ...` into the builder
+  output (dotenv 17 flipped that default to logging on load).
+
+### Security
+
+- Override `vite` to `^8.0.16` to close GHSA-fx2h-pf6j-xcff (high) and
+  GHSA-v6wh-96g9-6wx3 (moderate). `vite` only reaches this repo transitively
+  through vitest's dev server, so runtime installs of the published package
+  were never affected.
+
 ## [0.1.2] — 2026-06-04
 
 ### Changed
@@ -38,7 +53,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `dryRun` mode and a `purgeAfterUpload` toggle.
 - Credentials read from environment variables or a `.env.local` file.
 
-[Unreleased]: https://github.com/lostium/angular-deploy-bunny/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/lostium/angular-deploy-bunny/compare/v0.1.3...HEAD
+[0.1.3]: https://github.com/lostium/angular-deploy-bunny/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/lostium/angular-deploy-bunny/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/lostium/angular-deploy-bunny/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/lostium/angular-deploy-bunny/releases/tag/v0.1.0
