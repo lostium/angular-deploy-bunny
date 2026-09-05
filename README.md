@@ -30,7 +30,7 @@ pnpm add -D angular-deploy-bunny
 
 Requires **Angular 17+** using the esbuild-based **application builder** — the
 default since v17, which emits the browser bundle into a `browser/` folder — and
-**Node 22+**. The test suite runs in CI against Angular 17 through 21.
+**Node 22+**. The test suite runs in CI against Angular 17 through 22.
 
 ## Quick start
 
@@ -79,6 +79,11 @@ Add `.env.local` to your `.gitignore`. The `BUNNY_ACCOUNT_API_KEY` is only
 required when `purgeAfterUpload` is `true` (the default); if either secret is
 missing the build aborts before touching the network with a clear message.
 
+Those two names are defaults, not fixed: `storagePasswordVar` and
+`accountApiKeyVar` rename them per target, and `secretsFile` replaces the
+lookup entirely. See [Multiple environments](#multiple-environments) and
+[SOPS and age](#sops-and-age).
+
 ### Multiple environments
 
 Angular configurations let one workspace point at separate Bunny zones while
@@ -118,7 +123,7 @@ prerequisites; the package does not install them or manage keys. The builder
 decrypts the file in memory and you can still run the normal command directly:
 
 ```sh
-sops --encrypt --input-type dotenv --output-type dotenv \
+sops encrypt --input-type dotenv --output-type dotenv \
   --age "$SOPS_AGE_RECIPIENT" secrets/staging.env \
   > secrets/staging.enc.env
 ng deploy --configuration=staging
@@ -131,7 +136,7 @@ When `secretsFile` is set, it is the exclusive credential source: dotenv files
 and inherited Bunny variables are ignored, and a missing or invalid key stops
 the deployment before the Angular build or network calls. SOPS must be on
 `PATH`; decryption uses a bounded 30-second process and 1 MiB output limit.
-The builder redacts exact credential values from its diagnostics. Secrets do
+The builder redacts exact credential values from its diagnostics. Secrets
 necessarily exist in process memory while deploying, and output from unrelated
 tools or a malicious build is outside the builder's control.
 
@@ -150,9 +155,9 @@ tools or a malicious build is outside the builder's control.
 | `retries`          | `number`         | `3`            | Retries per failed upload/delete/list/purge (exponential backoff). `0` disables.              |
 | `ignore`           | `string[]`       | `[]`           | Glob patterns to skip. Supports `**`, `*`, and literals.                                       |
 | `dryRun`           | `boolean`        | `false`        | Compute and print the diff without writing anything.                                          |
-| `storagePasswordVar` | `string` | `BUNNY_STORAGE_PASSWORD` | Environment variable or SOPS key containing the Storage Zone password for this target. |
-| `accountApiKeyVar` | `string` | `BUNNY_ACCOUNT_API_KEY` | Environment variable or SOPS key for Pull Zone purge authentication. |
-| `secretsFile` | `string \| null` | `null` | SOPS-encrypted dotenv file, relative to the workspace root or absolute; when set it is the exclusive credential source. |
+| `storagePasswordVar` | `string`         | `BUNNY_STORAGE_PASSWORD` | Environment variable or SOPS key holding the Storage Zone password for this target. |
+| `accountApiKeyVar` | `string`           | `BUNNY_ACCOUNT_API_KEY` | Environment variable or SOPS key for Pull Zone purge authentication.             |
+| `secretsFile`      | `string \| null` | `null`         | SOPS-encrypted dotenv file, relative to the workspace root or absolute. When set it is the exclusive credential source. |
 
 ## How it works
 
@@ -173,14 +178,21 @@ cache expires by TTL.
 ```sh
 pnpm install
 pnpm test          # vitest
+pnpm test:sops     # opt-in; needs sops + age-keygen on PATH
 pnpm run typecheck
 pnpm run build     # emits dist/
 ```
 
-Tests cover env loading, file walking, diffing, the concurrency pool, the Bunny
-client, and the deploy orchestrator. The orchestrator uses a small dependency
-injection seam so tests bypass the SDK and the real filesystem; there are no
-E2E tests against live Bunny — verify those with `ng deploy --dry-run`.
+Tests cover credential resolution and SOPS decryption, log redaction, env
+loading, file walking, diffing, the concurrency pool, retries, the option
+schema, the Bunny client, the deploy orchestrator, and the Angular
+configuration merge. The orchestrator uses a small dependency injection seam so
+tests bypass the SDK and the real filesystem.
+
+`pnpm test:sops` is the one exception: it runs real SOPS and age against
+throwaway keys and fake values in a temporary directory. It is excluded from
+`pnpm test` and fails with a setup error if either binary is missing. There are
+no E2E tests against live Bunny — verify those with `ng deploy --dry-run`.
 
 ## Contributing
 
