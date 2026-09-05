@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] — 2026-09-05
+
+### Fixed
+
+- README: the development commands now invoke the opt-in SOPS suite as
+  `pnpm run test:sops`, matching the surrounding command tables and CI.
+  Documentation only; no runtime change.
+
 ## [0.2.0] — 2026-09-05
 
 ### Added
@@ -70,7 +78,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `dryRun` mode and a `purgeAfterUpload` toggle.
 - Credentials read from environment variables or a `.env.local` file.
 
-[Unreleased]: https://github.com/lostium/angular-deploy-bunny/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/lostium/angular-deploy-bunny/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/lostium/angular-deploy-bunny/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/lostium/angular-deploy-bunny/compare/v0.1.3...v0.2.0
 [0.1.3]: https://github.com/lostium/angular-deploy-bunny/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/lostium/angular-deploy-bunny/compare/v0.1.1...v0.1.2
