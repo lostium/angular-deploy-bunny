@@ -178,7 +178,7 @@ cache expires by TTL.
 ```sh
 pnpm install
 pnpm test          # vitest
-pnpm test:sops     # opt-in; needs sops + age-keygen on PATH
+pnpm run test:sops # opt-in; needs sops + age-keygen on PATH
 pnpm run typecheck
 pnpm run build     # emits dist/
 ```
@@ -189,7 +189,7 @@ schema, the Bunny client, the deploy orchestrator, and the Angular
 configuration merge. The orchestrator uses a small dependency injection seam so
 tests bypass the SDK and the real filesystem.
 
-`pnpm test:sops` is the one exception: it runs real SOPS and age against
+`pnpm run test:sops` is the one exception: it runs real SOPS and age against
 throwaway keys and fake values in a temporary directory. It is excluded from
 `pnpm test` and fails with a setup error if either binary is missing. There are
 no E2E tests against live Bunny — verify those with `ng deploy --dry-run`.

@@ -16,7 +16,7 @@ focused package, so the workflow is lightweight.
   The exact version is pinned in `package.json` (`packageManager`), so Corepack
   picks it up automatically.
 
-- **`sops` and `age` (optional)** — only needed to run `pnpm test:sops`, the
+- **`sops` and `age` (optional)** — only needed to run `pnpm run test:sops`, the
   opt-in suite that exercises real decryption. Everything else works without
   them. CI pins SOPS 3.13.3 and age 1.3.2; nearby versions are expected to work,
   but those are the ones actually verified.
@@ -38,7 +38,7 @@ confirms the project compiles.
 | -------------------- | --------------------------------------------- |
 | `pnpm test`          | Run the vitest suite once.                    |
 | `pnpm run test:watch`| Run vitest in watch mode.                     |
-| `pnpm test:sops`     | Run the opt-in real-SOPS suite (needs `sops` + `age-keygen`). |
+| `pnpm run test:sops` | Run the opt-in real-SOPS suite (needs `sops` + `age-keygen`). |
 | `pnpm run typecheck` | Type-check without emitting (`tsc --noEmit`). |
 | `pnpm run build`     | Compile `src/` to `dist/`.                    |
 
@@ -89,6 +89,7 @@ opt-in suite that runs real SOPS and age; it is excluded from `pnpm test` by
 
 1. Branch off `main`.
 2. Make your change with tests. Run `pnpm run typecheck && pnpm test` locally.
+   If you touched credential loading or SOPS, run `pnpm run test:sops` too.
 3. Add a line under `## [Unreleased]` in `CHANGELOG.md` describing the change
    from a user's perspective.
 4. Open a pull request. CI must pass all three jobs: the unit suite on Node 22
