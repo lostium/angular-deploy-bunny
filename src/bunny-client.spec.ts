@@ -151,4 +151,15 @@ describe('BunnyClient', () => {
 
     await expect(client.purgePullZone(12345)).rejects.toThrow(/403/);
   });
+
+  it('discards a failed purge body and reports only the HTTP status', async () => {
+    const response = new Response('body-secret', { status: 403, statusText: 'status-secret' });
+    const cancel = vi.spyOn(response.body!, 'cancel');
+    const readText = vi.spyOn(response, 'text');
+    vi.stubGlobal('fetch', vi.fn(async () => response));
+    const client = new BunnyClient({ region: 'Falkenstein', zoneName: 'zone', storagePassword: 'sp', accountApiKey: 'ak', logger: { debug() {}, info() {}, warn() {} } });
+    await expect(client.purgePullZone(12345)).rejects.toMatchObject({ message: 'Pull zone purge failed: 403' });
+    expect(readText).not.toHaveBeenCalled();
+    expect(cancel).toHaveBeenCalledOnce();
+  });
 });

@@ -88,6 +88,96 @@ describe('runDeploy', () => {
     expect(client.purgePullZone).toHaveBeenCalledWith(12345);
   });
 
+  it('awaits credentials before scheduling a build and forwards source options', async () => {
+    let release!: (secrets: { storagePassword: string; accountApiKey: string }) => void;
+    const credentials = new Promise<{ storagePassword: string; accountApiKey: string }>((resolve) => { release = resolve; });
+    const loadSecrets = vi.fn(() => credentials);
+    const ctx = fakeContext();
+    const makeClient = vi.fn(deps.makeClient);
+    const run = runDeploy(baseOptions({ buildTarget: 'my-app:build:staging', storagePasswordVar: 'STAGING_STORAGE', accountApiKeyVar: 'STAGING_ACCOUNT', secretsFile: 'secrets/staging.json' }), ctx, { loadSecrets, makeClient });
+    expect(ctx.scheduleTarget).not.toHaveBeenCalled();
+    expect(makeClient).not.toHaveBeenCalled();
+    expect(loadSecrets).toHaveBeenCalledWith({ workspaceRoot: ctx.workspaceRoot, requireAccountApiKey: true, storagePasswordVar: 'STAGING_STORAGE', accountApiKeyVar: 'STAGING_ACCOUNT', secretsFile: 'secrets/staging.json' });
+    release({ storagePassword: 'storage-sentinel', accountApiKey: 'account-sentinel' });
+    await run;
+    expect(ctx.scheduleTarget).toHaveBeenCalled();
+  });
+
+  it('passes resolved asynchronous credentials to the client', async () => {
+    deps.loadSecrets = async () => ({ storagePassword: 'async-storage', accountApiKey: 'async-account' });
+    const makeClient = vi.fn(deps.makeClient);
+    const out = await runDeploy(baseOptions({ outputPath }), fakeContext(), { ...deps, makeClient });
+    expect(out.success).toBe(true);
+    expect(makeClient).toHaveBeenCalledWith(expect.objectContaining({ storagePassword: 'async-storage', accountApiKey: 'async-account' }));
+  });
+
+  it.each(['sync', 'async'])('aborts before build or network on %s credential failure', async (mode) => {
+    const failure = new Error('Missing encrypted credentials');
+    deps.loadSecrets = mode === 'sync' ? () => { throw failure; } : async () => { throw failure; };
+    const ctx = fakeContext();
+    const makeClient = vi.fn(deps.makeClient);
+    const out = await runDeploy(baseOptions({ buildTarget: 'my-app:build:staging' }), ctx, { ...deps, makeClient });
+    expect(out).toEqual({ success: false, error: 'Missing encrypted credentials' });
+    expect(ctx.scheduleTarget).not.toHaveBeenCalled();
+    expect(makeClient).not.toHaveBeenCalled();
+    expect(client.listAll).not.toHaveBeenCalled();
+  });
+
+  it.each(['build', 'client', 'list', 'upload', 'walk'])('redacts returned %s errors after resolving credentials', async (stage) => {
+    deps.loadSecrets = () => ({ storagePassword: 'storage-sentinel', accountApiKey: 'account-sentinel' });
+    const failure = new Error('storage-sentinel account-sentinel storage-sentinel');
+    const ctx = fakeContext();
+    const options = baseOptions({ outputPath });
+    if (stage === 'build') {
+      options.outputPath = null;
+      options.buildTarget = 'my-app:build';
+      ctx.scheduleTarget = vi.fn().mockRejectedValue(failure);
+    } else if (stage === 'client') deps.makeClient = () => { throw failure; };
+    else if (stage === 'list') client.listAll.mockRejectedValue(failure);
+    else if (stage === 'upload') client.upload.mockRejectedValue(failure);
+    else options.outputPath = join(outputPath, 'storage-sentinel-account-sentinel');
+    const out = await runDeploy(options, ctx, deps);
+    expect(out.success).toBe(false);
+    expect(out.error).toContain('[REDACTED]');
+    expect(out.error).not.toContain('storage-sentinel');
+    expect(out.error).not.toContain('account-sentinel');
+  });
+
+  it('redacts direct logs, client diagnostics, cleanup and purge warnings without changing the context logger', async () => {
+    const messages: string[] = [];
+    const logger = { debug: (m: string) => messages.push(m), info: (m: string) => messages.push(m), warn: (m: string) => messages.push(m) };
+    const ctx = fakeContext({ logger: logger as BuilderContext['logger'] });
+    deps.loadSecrets = () => ({ storagePassword: 'storage-sentinel', accountApiKey: 'account-sentinel' });
+    deps.makeClient = (input) => {
+      input.logger.debug('storage-sentinel client debug');
+      input.logger.info('account-sentinel client info');
+      input.logger.warn('storage-sentinel account-sentinel retry');
+      return client as never;
+    };
+    client.listAll.mockResolvedValue([{ relPath: 'storage-sentinel.js', size: 1, sha256: null }]);
+    client.remove.mockRejectedValue(new Error('storage-sentinel cleanup'));
+    client.purgePullZone.mockRejectedValue('account-sentinel purge');
+    const out = await runDeploy(baseOptions({ outputPath, storageZoneName: 'storage-sentinel' }), ctx, deps);
+    expect(out.success).toBe(true);
+    expect(messages.join('\n')).toContain('[REDACTED] cleanup');
+    expect(messages.join('\n')).toContain('[REDACTED] purge');
+    expect(messages.join('\n')).not.toMatch(/storage-sentinel|account-sentinel/);
+    expect(ctx.logger).toBe(logger);
+    logger.info('storage-sentinel');
+    expect(messages.at(-1)).toBe('storage-sentinel');
+  });
+
+  it('redacts a secret in the empty-folder safety error', async () => {
+    const emptyDir = join(outputPath, 'storage-sentinel');
+    mkdirSync(emptyDir);
+    deps.loadSecrets = () => ({ storagePassword: 'storage-sentinel', accountApiKey: null });
+    client.listAll.mockResolvedValue([{ relPath: 'index.html', size: 1, sha256: null }]);
+    const out = await runDeploy(baseOptions({ outputPath: emptyDir, purgeAfterUpload: false }), fakeContext(), deps);
+    expect(out.success).toBe(false);
+    expect(out.error).toContain('[REDACTED]');
+    expect(out.error).not.toContain('storage-sentinel');
+  });
+
   it('does nothing in dry-run mode', async () => {
     const ctx = fakeContext();
     const out = await runDeploy(baseOptions({ outputPath, dryRun: true }), ctx, deps);
