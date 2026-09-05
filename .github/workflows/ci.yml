@@ -59,7 +59,7 @@ jobs:
           echo 'cbe24006683f8eb669266162894b9a522a1af52f2665fbc63a4bb032ed26ac10  '"$AGE_ARCHIVE" | sha256sum --check --status -
           tar -xzf "$AGE_ARCHIVE" -C "$TOOL_DIR" --strip-components=1
           echo "$TOOL_DIR" >> "$GITHUB_PATH"
-      - run: pnpm test:sops
+      - run: pnpm run test:sops
 
   # Verifies the @angular-devkit/architect peer surface compiles and the suite
   # passes against every supported Angular major (the peerDependencies range).
