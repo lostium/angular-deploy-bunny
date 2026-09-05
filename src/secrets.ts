@@ -1,4 +1,4 @@
-import { resolve } from 'node:path';
+import { isAbsolute, resolve } from 'node:path';
 import {
   credentialNames,
   selectSecrets,
@@ -39,7 +39,10 @@ export async function resolveSecrets(
     return sources.environment(options);
   }
 
-  const absolutePath = resolve(options.workspaceRoot ?? process.cwd(), secretsPath(options.secretsFile));
+  const configuredPath = secretsPath(options.secretsFile);
+  const absolutePath = isAbsolute(configuredPath)
+    ? configuredPath
+    : resolve(options.workspaceRoot ?? process.cwd(), configuredPath);
   const values = await sources.sops(absolutePath);
   return selectSecrets(values, options, 'sops');
 }

@@ -64,6 +64,15 @@ describe('resolveSecrets', () => {
     expect(selectedSources.environment).not.toHaveBeenCalled();
   });
 
+  it('passes an absolute SOPS path through without normalizing dot segments', async () => {
+    const selectedSources = sources();
+    const configuredPath = '/encrypted/secrets/../staging.enc.env';
+
+    await resolveSecrets({ ...defaults, secretsFile: configuredPath }, selectedSources);
+
+    expect(selectedSources.sops).toHaveBeenCalledWith(configuredPath);
+  });
+
   it('resolves a SOPS path from the workspace root', async () => {
     const selectedSources = sources();
 
