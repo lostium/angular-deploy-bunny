@@ -104,7 +104,9 @@ opt-in suite that runs real SOPS and age; it is excluded from `pnpm test` by
 3. Commit and push to `main`.
 4. Create a GitHub release tagged `vX.Y.Z`. This triggers
    `.github/workflows/publish.yml`, which builds, tests, and runs
-   `npm publish --provenance`.
+   `npm publish --provenance`. The workflow refuses a tag that does not match
+   `version` in `package.json`, so it fails fast on a mistyped or forgotten
+   bump instead of reaching npm.
 
 Publishing happens from CI — npm provenance requires it. Authentication uses
 npm **Trusted Publishing** (OIDC), so there is no `NPM_TOKEN` secret: the
