@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Configurable `storagePasswordVar` and `accountApiKeyVar` options for keeping
+  credentials for production, staging, and other Angular configurations side
+  by side while preserving the existing defaults.
+- Optional `secretsFile` support for SOPS-encrypted dotenv files with age,
+  usable directly through `ng deploy` and `ng deploy --configuration=...`.
+
+### Security
+
+- SOPS credentials are decrypted in memory from an external process and are
+  never written to plaintext files or copied into `process.env`. Encrypted
+  files, age identities, and private key material remain the operator's
+  responsibility; builder diagnostics redact exact credential values.
+
 ## [0.1.3] — 2026-07-11
 
 ### Changed
