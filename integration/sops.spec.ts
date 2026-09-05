@@ -74,18 +74,29 @@ describe('native SOPS credential resolution', () => {
   function encrypt(name: string, dotenv: string): string {
     const emptyConfig = join(directory, 'empty-sops-config.yaml');
     if (!readdirSync(directory).includes('empty-sops-config.yaml')) writeFileSync(emptyConfig, '');
-    const encrypted = execFileSync(
-      'sops',
-      [
-        '--config', emptyConfig,
-        'encrypt',
-        '--age', recipient,
-        '--input-type', 'dotenv',
-        '--output-type', 'dotenv',
-        '/dev/stdin',
-      ],
-      { input: dotenv, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] },
-    );
+    // SOPS reads its input from a path, not stdin. `/dev/stdin` works on macOS
+    // but fails with ENXIO on Linux runners, where the inherited descriptor is
+    // a pipe that cannot be reopened by name. Stage the fake plaintext in the
+    // temporary directory instead and unlink it before the test observes it.
+    const plaintextPath = join(directory, `${name}.plaintext-input`);
+    writeFileSync(plaintextPath, dotenv, { mode: 0o600 });
+    let encrypted: string;
+    try {
+      encrypted = execFileSync(
+        'sops',
+        [
+          '--config', emptyConfig,
+          'encrypt',
+          '--age', recipient,
+          '--input-type', 'dotenv',
+          '--output-type', 'dotenv',
+          plaintextPath,
+        ],
+        { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] },
+      );
+    } finally {
+      rmSync(plaintextPath, { force: true });
+    }
     const path = join(directory, name);
     writeFileSync(path, encrypted, { mode: 0o600 });
     return path;
