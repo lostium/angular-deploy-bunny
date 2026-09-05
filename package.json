@@ -34,6 +34,7 @@
     "build": "tsc -p .",
     "prepare": "tsc -p .",
     "test": "vitest run",
+    "test:sops": "vitest run --config vitest.sops.config.ts",
     "test:watch": "vitest",
     "typecheck": "tsc -p . --noEmit"
   },
