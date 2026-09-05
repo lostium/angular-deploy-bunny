@@ -143,25 +143,51 @@ describe('selectSecrets', () => {
   });
 
   it.each([
-    ['storage', { BUNNY_STORAGE_PASSWORD: 42 }],
-    ['storage', { BUNNY_STORAGE_PASSWORD: {} }],
-    ['account', { BUNNY_STORAGE_PASSWORD: 'storage', BUNNY_ACCOUNT_API_KEY: 42 }],
-    ['account', { BUNNY_STORAGE_PASSWORD: 'storage', BUNNY_ACCOUNT_API_KEY: {} }],
-  ])('rejects a selected non-string %s without exposing credential values', (_selected, values) => {
+    ['storage', { BUNNY_STORAGE_PASSWORD: 42 }, withoutAccount, 'BUNNY_STORAGE_PASSWORD'],
+    [
+      'account',
+      { BUNNY_STORAGE_PASSWORD: 'storage', BUNNY_ACCOUNT_API_KEY: 42 },
+      withAccount,
+      'BUNNY_ACCOUNT_API_KEY',
+    ],
+  ])(
+    'identifies the selected invalid %s credential and encrypted source',
+    (_selected, values, options, expectedKey) => {
+      expect(() => selectSecrets(values, options, 'sops')).toThrow(
+        new RegExp(`${expectedKey}.*encrypted credentials source`, 'i'),
+      );
+    },
+  );
+
+  it.each([
+    [
+      'storage',
+      { BUNNY_STORAGE_PASSWORD: { token: 'sensitive-value-that-must-not-leak' } },
+      withoutAccount,
+      'BUNNY_STORAGE_PASSWORD',
+    ],
+    [
+      'account',
+      {
+        BUNNY_STORAGE_PASSWORD: 'storage',
+        BUNNY_ACCOUNT_API_KEY: { token: 'sensitive-value-that-must-not-leak' },
+      },
+      withAccount,
+      'BUNNY_ACCOUNT_API_KEY',
+    ],
+  ])('does not expose a nested selected invalid %s credential', (_selected, values, options, key) => {
     const fakeSecret = 'sensitive-value-that-must-not-leak';
-    const withSecret =
-      _selected === 'storage'
-        ? { ...values, BUNNY_ACCOUNT_API_KEY: fakeSecret }
-        : { ...values, UNUSED: fakeSecret };
     let error: unknown;
     try {
-      selectSecrets(withSecret, withAccount, 'sops');
+      selectSecrets(values, options, 'sops');
     } catch (caught) {
       error = caught;
     }
     expect(error).toBeInstanceOf(Error);
     expect((error as Error).message).not.toContain(fakeSecret);
-    expect((error as Error).message).toMatch(/invalid credential value/i);
+    expect((error as Error).message).toMatch(
+      new RegExp(`invalid credential value for ${key}.*encrypted credentials source`, 'i'),
+    );
   });
 
   it('uses legacy environment wording and safe encrypted-source wording', () => {
