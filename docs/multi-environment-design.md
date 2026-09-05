@@ -1,7 +1,7 @@
 # Multi-environment deploys: design
 
 **Date:** 2026-09-05
-**Status:** agreed approach; consolidated specification for review
+**Status:** agreed approach; adversarial review completed, ready for implementation planning
 **Target release:** 0.2.0 (new optional options, no breaking change)
 
 ## Problem
@@ -55,12 +55,21 @@ Resolve `secretsFile` relative to `context.workspaceRoot`, preserving absolute
 paths. Require the external `sops` executable on PATH only in this mode; do not
 install it automatically or implement cryptography inside the package.
 
-Run `sops decrypt --input-type dotenv --output-type dotenv <absolute-path>`
+Run `sops decrypt --input-type dotenv --output-type json <absolute-path>`
 through an asynchronous child-process API with a separate argument array and
-no shell. Capture stdout in memory and parse it with `dotenv.parse`; never
+no shell. Capture stdout in memory and parse it with `JSON.parse`; never
 write plaintext to disk, expand variables, or copy decrypted entries into
 `process.env`. Keep decrypted results local to one deployment; do not cache
-them across targets. Use a 30-second timeout and a 1 MiB output limit.
+them across targets. Use a 30-second timeout, forced termination of the direct
+SOPS child on timeout, and a 1 MiB limit for each captured output stream.
+Reject malformed JSON, null, arrays, and non-string selected credentials.
+Select only own properties and preserve credential values verbatim. A required
+credential must be a nonempty string; do not trim secrets. Empty or absent
+optional account credentials retain legacy behavior (empty string or null).
+JSON avoids a second, incompatible dotenv interpretation: SOPS preserves a
+literal `#` in a value, whereas `dotenv.parse` can treat it as a comment.
+SOPS dotenv input semantics apply (quotes are literal); document unquoted
+input and do not silently strip quotes from decrypted values.
 
 The subprocess inherits the environment so SOPS can use its normal age key
 discovery, including `SOPS_AGE_KEY_FILE`. This does not make inherited Bunny
@@ -78,6 +87,19 @@ Do not log secrets. Redact resolved credential values from subsequent builder
 logs and returned errors, including errors originating in the SDK or HTTP
 responses. This reduces accidental disclosure; it does not protect against a
 compromised deployment process or guarantee erasure from JavaScript memory.
+Redaction covers messages emitted by this builder and its injected client
+logger, plus all returned error strings; it cannot intercept arbitrary console
+output or logs from the scheduled Angular builder. Match exact credential
+values, not encoded/transformed variants. Do not forward raw HTTP response
+bodies in purge errors. The SOPS binary, PATH, workspace and build scripts are
+trusted: inherited age identity variables can also be read by build code.
+Do not claim isolation from malicious builds or child-process trees. Remote
+identities should have only the access needed for the selected environment.
+
+Missing files may be identified by a read-only filesystem check; distinguish
+that from executable ENOENT. Validate that the selected file is a regular file.
+Do not attach raw errors as causes or include parser excerpts in diagnostics.
+No automatic retries or interactive authentication prompts are added.
 
 Example preserving direct Angular commands:
 
@@ -198,6 +220,9 @@ Add the three properties, all optional with their defaults; `required` stays
 `secretsFile` fields. Keep them optional for existing typed callers; the schema
 and runtime resolver provide defaults. Validate nonblank names at runtime and
 add corresponding schema constraints.
+Variable names must match `^[A-Za-z_][A-Za-z0-9_]*$`; paths must contain a
+non-whitespace character and no NUL. `null` is allowed only for `secretsFile`.
+Reject invalid runtime inputs before accessing any credential source.
 
 ### `src/env.ts`
 
@@ -269,6 +294,10 @@ SOPS loader/resolver tests:
 - an integration check with actual SOPS and a temporary test-only age identity
   verifies the encrypted dotenv format and successful decryption. Never use
   production identities or contact Bunny for this check.
+- round-trip `#`, quotes, spaces, equals signs, dollar signs and backslashes
+  using SOPS JSON output; reject malformed output without leaking excerpts;
+- inherited object properties cannot satisfy missing keys; unrequested
+  non-string values in the JSON object are ignored.
 
 `src/deploy.spec.ts`: through the existing `Deps` seam, assert that
 the resolver receives the option values and that omission resolves defaults.
@@ -325,6 +354,16 @@ its current remote listing and credential requirements in both modes.
   SOPS files without command wrappers or plaintext intermediate files.
 - SOPS failures never fall back to inherited/local credentials, and traditional
   deployments do not require SOPS.
+
+## Review limits
+
+The existing dotenv loader mutates process-global state; different workspace
+roots using identical variable names can still observe previously loaded
+values. This pre-existing limitation is not fixed in this backward-compatible
+change. Use distinct variable names or separate processes in traditional mode;
+SOPS mode isolates credential maps for sequential and concurrent deployments.
+An Angular configuration still needs the correct build target, zone and Pull
+Zone ID: encryption does not prove that those resources belong together.
 
 ## References
 
