@@ -122,8 +122,8 @@ export class BunnyClient {
         headers: { AccessKey: accessKey },
       });
       if (!res.ok) {
-        const body = await res.text().catch(() => '');
-        throw new Error(`Pull zone purge failed: ${res.status} ${res.statusText} ${body}`.trim());
+        await res.body?.cancel().catch(() => {});
+        throw new Error(`Pull zone purge failed: ${res.status}`);
       }
     });
   }

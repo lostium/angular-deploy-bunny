@@ -98,4 +98,89 @@ describe('loadSecrets', () => {
       rmSync(dirB, { recursive: true, force: true });
     }
   });
+
+  it('selects custom credential names from the process environment before dotenv values', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'bunny-env-custom-process-'));
+    writeFileSync(
+      join(dir, '.env.local'),
+      'STAGING_STORAGE_PASSWORD=fromFile\nSTAGING_ACCOUNT_API_KEY=accountFromFile\n',
+    );
+    process.env['STAGING_STORAGE_PASSWORD'] = 'fromProcess';
+    process.env['STAGING_ACCOUNT_API_KEY'] = 'accountFromProcess';
+    try {
+      expect(
+        loadSecrets({
+          requireAccountApiKey: true,
+          workspaceRoot: dir,
+          storagePasswordVar: 'STAGING_STORAGE_PASSWORD',
+          accountApiKeyVar: 'STAGING_ACCOUNT_API_KEY',
+        }),
+      ).toEqual({ storagePassword: 'fromProcess', accountApiKey: 'accountFromProcess' });
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('selects both custom credential names from one dotenv file', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'bunny-env-custom-file-'));
+    writeFileSync(
+      join(dir, '.env.local'),
+      [
+        'BUNNY_STORAGE_PASSWORD=production',
+        'STAGING_STORAGE_PASSWORD=staging',
+        'STAGING_ACCOUNT_API_KEY=staging-account',
+        '',
+      ].join('\n'),
+    );
+    try {
+      expect(
+        loadSecrets({
+          requireAccountApiKey: true,
+          workspaceRoot: dir,
+          storagePasswordVar: 'STAGING_STORAGE_PASSWORD',
+          accountApiKeyVar: 'STAGING_ACCOUNT_API_KEY',
+        }),
+      ).toEqual({ storagePassword: 'staging', accountApiKey: 'staging-account' });
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('does not complete a present .env.local from .env or fall back to a default key', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'bunny-env-no-completion-'));
+    writeFileSync(
+      join(dir, '.env'),
+      'STAGING_STORAGE_PASSWORD=fromEnv\nBUNNY_STORAGE_PASSWORD=production\n',
+    );
+    writeFileSync(join(dir, '.env.local'), 'BUNNY_STORAGE_PASSWORD=production-local\n');
+    try {
+      expect(() =>
+        loadSecrets({
+          requireAccountApiKey: false,
+          workspaceRoot: dir,
+          storagePasswordVar: 'STAGING_STORAGE_PASSWORD',
+        }),
+      ).toThrow(/STAGING_STORAGE_PASSWORD/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects invalid names before dotenv can add credentials', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'bunny-env-invalid-name-'));
+    const dotenvOnlyName = 'BUNNY_ENV_TEST_SHOULD_NOT_LOAD';
+    writeFileSync(join(dir, '.env.local'), `${dotenvOnlyName}=file-value\n`);
+    try {
+      expect(() =>
+        loadSecrets({
+          requireAccountApiKey: false,
+          workspaceRoot: dir,
+          storagePasswordVar: 'invalid-name',
+        }),
+      ).toThrow(/storagePasswordVar/);
+      expect(process.env[dotenvOnlyName]).toBeUndefined();
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
 });

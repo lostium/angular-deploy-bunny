@@ -7,7 +7,9 @@ import {
 } from '@angular-devkit/architect';
 import { BunnyClient, type BunnyLogger } from './bunny-client.js';
 import { runWithConcurrency } from './concurrency.js';
-import { loadSecrets } from './env.js';
+import type { Secrets } from './credential-values.js';
+import { createRedactor } from './redact.js';
+import { resolveSecrets, type ResolveSecretsOptions } from './secrets.js';
 import { diff } from './sync.js';
 import type { DeployOptions, RemoteFile } from './types.js';
 import { walkLocal } from './walk.js';
@@ -24,7 +26,7 @@ interface ClientLike {
 }
 
 export interface Deps {
-  loadSecrets: typeof loadSecrets;
+  loadSecrets: (options: ResolveSecretsOptions) => Secrets | Promise<Secrets>;
   makeClient: (input: {
     region: DeployOptions['storageRegion'];
     zoneName: string;
@@ -36,7 +38,7 @@ export interface Deps {
 }
 
 const defaultDeps: Deps = {
-  loadSecrets,
+  loadSecrets: resolveSecrets,
   makeClient: (input) => new BunnyClient(input),
 };
 
@@ -96,7 +98,12 @@ export async function runDeploy(
   context: BuilderContext,
   deps: Deps = defaultDeps,
 ): Promise<BuilderOutput> {
-  const log = context.logger;
+  let redact = createRedactor([]);
+  const log: BunnyLogger = {
+    debug: (message) => context.logger.debug(redact(message)),
+    info: (message) => context.logger.info(redact(message)),
+    warn: (message) => context.logger.warn(redact(message)),
+  };
   try {
     if (options.purgeAfterUpload && options.pullZoneId == null) {
       return {
@@ -105,10 +112,14 @@ export async function runDeploy(
       };
     }
 
-    const secrets = deps.loadSecrets({
+    const secrets = await deps.loadSecrets({
       requireAccountApiKey: options.purgeAfterUpload,
       workspaceRoot: context.workspaceRoot,
+      storagePasswordVar: options.storagePasswordVar,
+      accountApiKeyVar: options.accountApiKeyVar,
+      secretsFile: options.secretsFile,
     });
+    redact = createRedactor([secrets.storagePassword, secrets.accountApiKey]);
 
     const outputPath = await resolveOutputPath(options, context);
     log.info(`Deploying ${outputPath} → bunny:${options.storageZoneName}${options.targetFolder}`);
@@ -142,7 +153,7 @@ export async function runDeploy(
     if (local.length === 0 && remote.length > 0) {
       return {
         success: false,
-        error: `Refusing to delete all ${remote.length} remote file(s): the local output folder "${outputPath}" is empty. Check that the build produced output and that buildTarget/outputPath is correct.`,
+        error: redact(`Refusing to delete all ${remote.length} remote file(s): the local output folder "${outputPath}" is empty. Check that the build produced output and that buildTarget/outputPath is correct.`),
       };
     }
 
@@ -195,7 +206,7 @@ export async function runDeploy(
     );
     return { success: true };
   } catch (err) {
-    return { success: false, error: errMessage(err) };
+    return { success: false, error: redact(errMessage(err)) };
   }
 }
 

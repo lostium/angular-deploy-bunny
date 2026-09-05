@@ -13,7 +13,7 @@ export const STORAGE_REGIONS = [
 ] as const;
 export type StorageRegion = typeof STORAGE_REGIONS[number];
 
-export interface DeployOptions extends JsonObject {
+export type DeployOptions = JsonObject & {
   buildTarget: string | null;
   outputPath: string | null;
   storageZoneName: string;
@@ -25,7 +25,10 @@ export interface DeployOptions extends JsonObject {
   retries: number;
   ignore: string[];
   dryRun: boolean;
-}
+  storagePasswordVar?: string;
+  accountApiKeyVar?: string;
+  secretsFile?: string | null;
+};
 
 export interface LocalFile {
   relPath: string;

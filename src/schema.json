@@ -61,6 +61,24 @@
       "type": "boolean",
       "default": false,
       "description": "Compute and print the diff without uploading, deleting, or purging."
+    },
+    "storagePasswordVar": {
+      "type": "string",
+      "default": "BUNNY_STORAGE_PASSWORD",
+      "pattern": "^[A-Za-z_][A-Za-z0-9_]*$",
+      "description": "Environment variable holding the Storage Zone password for this target. Lets several targets keep their credentials side by side in one .env.local, or selects a key in the encrypted credentials source."
+    },
+    "accountApiKeyVar": {
+      "type": "string",
+      "default": "BUNNY_ACCOUNT_API_KEY",
+      "pattern": "^[A-Za-z_][A-Za-z0-9_]*$",
+      "description": "Key holding the account API key used to purge the Pull Zone. Required only when purgeAfterUpload is true and selects a key in the encrypted credentials source."
+    },
+    "secretsFile": {
+      "type": ["string", "null"],
+      "default": null,
+      "pattern": "^(?=[\\s\\S]*\\S)[^\\u0000]+$",
+      "description": "SOPS-encrypted dotenv file, relative to the workspace root or absolute. When set, deployment credentials come exclusively from this file. Requires sops on PATH."
     }
   },
   "required": ["storageZoneName"]
